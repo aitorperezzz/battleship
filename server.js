@@ -29,17 +29,21 @@ io.sockets.on('connection', newClient);
 function newClient(socket) {
   console.log('New client with socket id: ' + socket.id);
   console.log('Sending initial information...');
-  io.emit('initialize', master.data);
+  io.emit('initialize', master.map.sizes);
 
   socket.on('ready', ready);
   function ready(data) {
     master.ready(data);
   }
+
+  socket.on('click', click);
+  function click(data) {
+    master.click(data);
+  }
 }
 
 
 // Log messages in server.
-
 function send(command, data) {
   // This function allows master to send messages to this server module.
 
@@ -47,13 +51,16 @@ function send(command, data) {
   let message;
   switch (command) {
     case 'addPlayer':
-      message = 'Adding a new player';
+      message = 'adding a new player';
       break;
     case 'updateMode':
-      message = 'Updating mode';
+      message = 'updating mode';
+      break;
+    case 'updateMaps':
+      message = 'updating maps';
       break;
     default:
-      message = 'Command not understood';
+      message = 'command not understood';
       break;
   }
   console.log('Master: ' + message);

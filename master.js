@@ -12,7 +12,11 @@ class Master {
     this.mode = 'wait';
     this.players = [];
 
+    // Initialize the map.
+    this.map = new Map();
+
     // Calculate some sizes for the game.
+    /*
     let canvasx = 500;
     let canvasy = 600;
     let xsize = Math.min(canvasx, canvasy) * 3 / 4;
@@ -20,26 +24,14 @@ class Master {
     let size = xsize / 10;
     let initialx = (canvasx - xsize) / 2;
     let initialy = (canvasy - ysize) / 2;
-    let myMap = {
+    this.sizes = {
       initialx: initialx,
       initialy: initialy,
       xsize: xsize,
       ysize: ysize,
       size: size,
     };
-    /*
-    let myMap = {
-      'prepare': {
-        // Sizes in prepare mode.
-        initialx: 100,
-        initialy: 100,
-        xsize: 400,
-        size: 40,
-        ysize: 400,
-      },
-      'play': {
-      }
-    };*/
+    */
 
     // Decide some sizes for the enemy's map.
     /*
@@ -48,29 +40,32 @@ class Master {
     };*/
 
     // Bundle all this information.
+    /*
     this.data = {
       canvasx: canvasx,
       canvasy: canvasy,
-      myMap: myMap
-      //enemyMap: enemyMap
+      sizes: this.sizes
     };
 
-    // Master has a map for each player.
-    this.map1 = new Map(1);
-    this.map2 = new Map(2);
+    // Create the maps for the two players.
+    this.map = new Map(this.sizes);
+    //this.maps = [map1, map2];
+    //this.map = new Map(myMap);
+    //this.maps = [map1, map2];
+    */
   }
 
   ready(data) {
     console.log('Client with id: ' + data.socketId + ' wants to play');
 
-    // Check that the user is not already a player.
-    if (this.isPlayer(data.socketId)) {
+    // Check if the client is already a player.
+    if (this.getPlayer(data.socketId) != 0) {
       console.log('Client is already a player. Ignoring');
       return;
     }
 
-    // Check that the room is not full.
-    if (this.players.length >= 2) {
+    // Check if the room is full.
+    if (this.players.length == 2) {
       console.log(' The room is currently full. Ignoring');
       return;
     }
@@ -112,15 +107,41 @@ class Master {
     }
   }
 
-  isPlayer(socketId) {
+  getPlayer(socketId) {
     // Receives a socket id and decides if it corresponds to a player.
     for (let k = 0; k < this.players.length; k++) {
       if (this.players[k].socketId == socketId) {
         // Client is already a player.
-        return true;
+        return this.players[k].playerId;
       }
     }
-    return false;
+    return 0;
+  }
+
+  click(data) {
+    // Receives a click inside the canvas from a client and treats it.
+    console.log('Receiving a click from client ' + data.socketId);
+
+    // Check that the client is a player.
+    let playerId = this.getPlayer(data.socketId);
+    if (playerId == 0) {
+      console.log('Client is not a player. Ignoring');
+      return;
+    }
+
+    // Check that the click was inside the grid.
+    let clicked = this.map.clicked(data.mx, data.my, this.mode);
+    if (clicked == undefined) {
+      console.log('The click was outside the grid. Ignoring');
+      return;
+    }
+    else {
+      // Update the information in master.
+      this.map.addBoat(clicked[0], clicked[1], playerId);
+
+      // Broadcast this map change.
+      server.send('updateMaps', this.map.grid);
+    }
   }
 }
 
