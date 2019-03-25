@@ -1,0 +1,20 @@
+{
+  "name": "battleship",
+  "version": "1.0.0",
+  "description": "Battleship game client/server",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "nodejs",
+    "p5js"
+  ],
+  "author": "Aitor Perez",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "socket.io": "^2.2.0"
+  }
+}
