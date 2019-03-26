@@ -2,7 +2,7 @@
 
 class Map {
   constructor() {
-    // Calculate all the relevant sizes for the game.
+    // Calculate sizes for the grid placement in prepare mode.
     let canvasx = 500;
     let canvasy = 600;
     let xsize = Math.min(canvasx, canvasy) * 3 / 4;
@@ -10,6 +10,14 @@ class Map {
     let size = xsize / 10;
     let initialx = (canvasx - xsize) / 2;
     let initialy = (canvasy - ysize) / 2;
+
+    // Calculate sizes for the boat placements in prepare mode.
+    let xsizeBoat = canvasx * 5 / 6;
+    let sizeBoat = xsizeBoat / 15;
+    let ysizeBoat = sizeBoat;
+    let initialxBoat = (canvasx - xsizeBoat) / 2;
+    let initialyBoat = (initialy - sizeBoat) / 2;
+
     this.sizes = {
       canvasx: canvasx,
       canvasy: canvasy,
@@ -19,9 +27,14 @@ class Map {
         xsize: xsize,
         ysize: ysize,
         size: size,
+        xsizeBoat: xsizeBoat,
+        ysizeBoat: ysizeBoat,
+        sizeBoat: sizeBoat,
+        initialxBoat: initialxBoat,
+        initialyBoat: initialyBoat,
       },
       play: {
-        // TODO: get sizes while playing.
+        // TODO: calculate sizes for playing mode.
       }
     };
 
@@ -34,6 +47,18 @@ class Map {
         this.grid[i].push(newCell);
       }
     }
+
+    this.boatSizes = [5, 4, 3, 3, 2];
+    this.boats = [];
+    // Create all the boats.
+    for (let i = 0; i < this.boatSizes.length; i++) {
+      // Create i + 1 boats of this size.
+      for (let k = 0; k < i + 1; k++) {
+        let newBoat = this.createBoat(this.boatSizes[i]);
+        this.boats.push(newBoat);
+      }
+    }
+
   }
 
   clicked(mx, my, mode) {
@@ -75,6 +100,16 @@ class Map {
     let clickedY = my >= sizes.initialy + row * sizes.size && my < sizes.initialy + (row + 1) * sizes.size;
     return clickedX && clickedY;
   }*/
+
+  createBoat(size) {
+    // Receives a size and creates a boat of that size located at the first cell.
+    let boat = [];
+    for (let i = 0; i < size; i++) {
+      let newCell = [0, i, true];
+      boat.push(newCell);
+    }
+    return boat;
+  }
 
   addBoat(row, col, playerId) {
     // Receives a row and column and a player id and adds a boat at that location.
