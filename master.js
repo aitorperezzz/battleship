@@ -4,7 +4,7 @@
 let server = require('./server.js');
 
 // Import the child classes.
-let Map = require('./map.js');
+let MasterMap = require('./mastermap.js');
 
 // Define the master class.
 class Master {
@@ -13,7 +13,7 @@ class Master {
     this.players = [];
 
     // Initialize the map.
-    this.map = new Map();
+    this.map = new MasterMap();
 
     // Calculate some sizes for the game.
     /*
@@ -142,6 +142,28 @@ class Master {
       // Broadcast this map change.
       server.send('updateMaps', this.map.grid);
     }
+  }
+
+  sendMap(data) {
+    // Receives a map from a player and updates.
+    console.log('Updating map from player ' + data.playerId);
+    this.map.update(data);
+
+    // If both maps have been received, get into play mode.
+    if (this.bothReceived()) {
+      this.mode = 'play';
+
+      // Send the new mode and the new maps.
+      server.send('updateMode', this.mode);
+      let data = this.map.grid;
+      server.send('getEnemyMap', )
+
+    }
+  }
+
+  bothReceived() {
+    // Decides if the maps from the two players have been received.
+    return this.map.info["player1"].receivedMap && this.map.info["player2"].receivedMap;
   }
 }
 

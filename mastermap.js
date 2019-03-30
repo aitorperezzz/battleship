@@ -1,6 +1,7 @@
-// This is the Map class.
+// This is the MasterMap class for master.
+// This class stores information about both maps at the same time.
 
-class Map {
+class MasterMap {
   constructor() {
     // Calculate sizes for the grid placement in prepare mode.
     let canvasx = 500;
@@ -38,16 +39,35 @@ class Map {
       }
     };
 
+    // Create some informationf for both players.
+    this.info = {
+      "player1": {
+        mapReceived: false
+      },
+      "player2": {
+        mapReceived: false
+      }
+    };
+
     // Create a grid to store information about both players.
     this.grid = [];
     for (let i = 0; i < 10; i++) {
       this.grid.push([]);
       for (let j = 0; j < 10; j++) {
-        let newCell = [false, false];
+        // Create a cell object.
+        let newCell = {
+          "player1": {
+            isBoat: false
+          },
+          "player2": {
+            isBoat: false
+          }
+        };
         this.grid[i].push(newCell);
       }
     }
 
+    /*
     this.boatSizes = [5, 4, 3, 3, 2];
     this.boats = [];
     // Create all the boats.
@@ -57,7 +77,7 @@ class Map {
         let newBoat = this.createBoat(this.boatSizes[i]);
         this.boats.push(newBoat);
       }
-    }
+    }*/
 
   }
 
@@ -88,6 +108,31 @@ class Map {
     }
   }
 
+  update(data) {
+    // Receives the map of a player in the appropriate format and updates.
+    let player = 'player' + data.playerId;
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        console.log(typeof(data.grid[0]));
+        this.grid[i][j][player].isBoat = data.grid[i][j].isBoat;
+      }
+    }
+    this.info[player].receivedMap = true;
+    this.log();
+  }
+
+  log() {
+    // Logs the map information to the terminal.
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        console.log('Row: ' + i + ' Col: ' + j);
+        console.log('player1: ' + this.grid[i][j].player1.isBoat);
+        console.log('player2: ' + this.grid[i][j].player2.isBoat);
+        console.log('');
+      }
+    }
+  }
+
   /*
   cellClicked(mx, my, row, col, mode) {
     // Receives a row, column and mode and decides if the cell has been clicked.
@@ -101,6 +146,7 @@ class Map {
     return clickedX && clickedY;
   }*/
 
+  /*
   createBoat(size) {
     // Receives a size and creates a boat of that size located at the first cell.
     let boat = [];
@@ -115,7 +161,9 @@ class Map {
     // Receives a row and column and a player id and adds a boat at that location.
     this.grid[row][col][playerId - 1] = true;
   }
+  */
+
 }
 
 // Export this class for master.
-module.exports = Map;
+module.exports = MasterMap;

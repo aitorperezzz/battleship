@@ -7,11 +7,11 @@
 
     <style> body {padding: 0; margin: 0;} </style>
 
-    <!-- Load p5js library-->
-    <!--<script src="../p5.min.js"></script>-->
-    <!--<script src="../addons/p5.dom.min.js"></script>-->
-    <!--<script src="../addons/p5.sound.min.js"></script>-->
+    <!-- Load p5js library and scripts-->
     <script src="p5.js"></script>
+    <script src="boat.js"></script>
+    <script src="map.js"></script>
+    <script src="client.js"></script>
     <script src="sketch.js"></script>
 
     <!--Load socket.io client library using CDN-->
@@ -21,6 +21,7 @@
   <body>
     <div id='buttonArea'>
       <button onclick='clientReady()'>Ready to play</button>
+      <button onclick='sendMap()'>Finished preparing my boats</button>
     </div>
   </body>
 </html>

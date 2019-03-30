@@ -40,6 +40,11 @@ function newClient(socket) {
   function click(data) {
     master.click(data);
   }
+
+  socket.on('sendMap', sendMap);
+  function sendMap(data) {
+    master.sendMap(data);
+  }
 }
 
 
