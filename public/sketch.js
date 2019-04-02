@@ -15,14 +15,13 @@ function setup() {
   socket.on('initialize', initialize);
   socket.on('addPlayer', addPlayer);
   socket.on('updateMode', updateMode);
-  socket.on('updateMaps', updateMaps);
+  socket.on('finalMaps', finalMaps);
+  socket.on('bombing', bombing);
 }
 
 function draw() {
   // Call client to draw.
-  if (client.initialized) {
-    client.display();
-  }
+  client.display();
 }
 
 function mousePressed() {
@@ -44,9 +43,9 @@ function clientReady() {
   socket.emit('ready', data);
 }
 
-function sendMap() {
+function sendMyMap() {
   // This client has finished preparing its boats.
-  client.sendMap();
+  client.sendMyMap();
 }
 
 // FUNCTIONS TO HANDLE EVENTS COMING FROM THE SERVER.
@@ -68,4 +67,12 @@ function updateMode(data) {
 
 function updateMaps(data) {
   client.updateMaps(data);
+}
+
+function finalMaps(data) {
+  client.finalMaps(data);
+}
+
+function bombing(data) {
+  client.bombing(data);
 }

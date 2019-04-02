@@ -36,20 +36,20 @@ function newClient(socket) {
     master.ready(data);
   }
 
+  socket.on('sendMyMap', receive);
+  function receive(data) {
+    master.receive(data);
+  }
+
   socket.on('click', click);
   function click(data) {
     master.click(data);
-  }
-
-  socket.on('sendMap', sendMap);
-  function sendMap(data) {
-    master.sendMap(data);
   }
 }
 
 
 // Log messages in server.
-function send(command, data) {
+function send(command, data, who) {
   // This function allows master to send messages to this server module.
 
   // Log master messages.
@@ -61,8 +61,11 @@ function send(command, data) {
     case 'updateMode':
       message = 'updating mode';
       break;
-    case 'updateMaps':
-      message = 'updating maps';
+    case 'bombing':
+      message = 'sending a bomb event';
+      break;
+    case 'finalMaps':
+      message = 'sending the final maps for both players';
       break;
     default:
       message = 'command not understood';

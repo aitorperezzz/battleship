@@ -1,22 +1,39 @@
-class Map {
-  // The map class keeps track of the client's boat placements.
+// The ClientMap class keeps track of the client's information'.
+// It keeps only some information about the enemy's map.
 
+class ClientMap {
   constructor() {
     // Information about sizes.
     this.sizes;
 
-    // Create the empty grid.
-    this.grid = [];
-    for (let i = 0; i < 10; i++) {
-      this.grid.push([]);
-      for (let j = 0; j < 10; j++) {
-        let newCell = {
-          isBoat: false
-        };
-        this.grid[i].push(newCell);
+    // Create two grids to store the relevant information.
+    // For the enemy, isBoat does not contain all the information.
+    this.grid = {};
+    for (let k = 0; k < 2; k++) {
+      let grid = [];
+      for (let i = 0; i < 10; i++) {
+        grid.push([]);
+        for (let j = 0; j < 10; j++) {
+          let newCell = {
+            isBoat: false,
+            isBombed: false,
+            isSunk: false,
+          };
+          grid[i].push(newCell);
+        }
+      }
+
+      if (k == 0) {
+        // Own grid.
+        this.grid['own'] = grid;
+      }
+      else if (k == 1) {
+        // Enemy grid.
+        this.grid['enemy'] = grid;
       }
     }
 
+    // TODO: review this code.
     // Create the boats for this client.
     this.boatSizes = [5, 4, 3, 3, 2];
     this.boats = [];
@@ -33,24 +50,13 @@ class Map {
 
   display(mode) {
     // Display different things depending on the mode.
-    if (mode == 'prepare') {
-      let sizes = this.sizes.prepare;
 
-      // Draw each of the cells of the grid.
-      for (let i = 0; i < 10; i++) {
-        for (let j = 0; j < 10; j++) {
-          if (this.grid[i][j].isBoat) {
-            // Paint it grey.
-            fill(150);
-          }
-          else {
-            // Paint it blue.
-            fill(30, 144, 255);
-          }
-          stroke(1);
-          rect(sizes.initialx + j * sizes.size, sizes.initialy + i * sizes.size, sizes.size, sizes.size);
-        }
-      }
+    // Get the right sizes.
+    let sizes = this.sizes[mode];
+
+    if (mode == 'prepare') {
+      // Draw my own grid.
+      this.displayGrid(sizes, 'own');
 
       // Display the array of boats left to locate.
       for (let k = 0; k < this.boats.length; k++) {
@@ -58,7 +64,7 @@ class Map {
           // Paint it yellow.
           fill(255,255,102);
         }
-        else if (!this.boats[k].dropped) {
+        else {
           // Paint it white.
           fill(255);
         }
@@ -73,6 +79,46 @@ class Map {
       // Display the selected boat.
       if (this.boats[this.boatSelected]) {
         this.boats[this.boatSelected].display(sizes);
+      }
+    }
+    else if (mode == 'play') {
+      // Display both grids.
+      this.displayGrid(sizes['own'], 'own');
+      this.displayGrid(sizes['enemy'], 'enemy');
+    }
+  }
+
+  displayGrid(sizes, which) {
+    // Receives a sizes object and displays the selected grid.
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        // Only draw the boats in my own grid.
+        if (which == 'own' && this.grid[which][i][j].isBoat) {
+          // Paint it grey.
+          fill(150);
+        }
+        else {
+          // Paint it blue.
+          fill(30, 144, 255);
+        }
+        stroke(1);
+        rect(sizes.initialx + j * sizes.size, sizes.initialy + i * sizes.size, sizes.size, sizes.size);
+
+        // Draw the bombing information if required.
+        if (this.grid[which][i][j].isBombed) {
+          if (this.grid[which][i][j].isBoat) {
+            // Draw a red ellipse when the bombing is over a boat.
+            fill(255, 0, 0);
+            noStroke();
+            ellipse(sizes.initialx + (j + 1/2) * sizes.size, sizes.initialy + (i + 1/2) * sizes.size, sizes.size / 3, sizes.size / 3);
+          }
+          else if (which == 'enemy') {
+            // Only draw water for the enemy grid.
+            fill(255);
+            noStroke();
+            ellipse(sizes.initialx + (j + 1/2) * sizes.size, sizes.initialy + (i + 1/2) * sizes.size, sizes.size / 3, sizes.size / 3);
+          }
+        }
       }
     }
   }
@@ -111,7 +157,7 @@ class Map {
     }
 
     // Now check if the cell is occupied by a piece of a boat.
-    if (this.grid[row][col].isBoat) {
+    if (this.grid['own'][row][col].isBoat) {
       return false;
     }
     return true;
@@ -144,12 +190,20 @@ class Map {
 
     // Actually drop the boat where it is.
     for (let i = 0; i < boat.pieces.length; i++) {
-      this.grid[boat.pieces[i].row][boat.pieces[i].col].isBoat = true;
+      this.grid['own'][boat.pieces[i].row][boat.pieces[i].col].isBoat = true;
     }
 
     // Remove the boat from the array.
     this.boats.splice(this.boatSelected, 1);
     this.boatSelected = -1;
     return true;
+  }
+
+  bombing(data) {
+    // Receives bombing data and updates.
+    // It receives a bomber id.
+    let bombed = data.bomberId == client.playerId ? 'enemy' : 'own';
+    this.grid[bombed][data.row][data.col].isBombed = data.isBombed;
+    this.grid[bombed][data.row][data.col].isBoat = data.isBoat;
   }
 }

@@ -9,7 +9,7 @@ class Client {
     this.initialized = false;
 
     // Initialize the map.
-    this.map = new Map();
+    this.map = new ClientMap();
   }
 
   connect(socketId) {
@@ -31,7 +31,9 @@ class Client {
 
   display() {
     background(0);
-    this.map.display(this.mode);
+    if (this.initialized) {
+      this.map.display(this.mode);
+    }
   }
 
   addPlayer(data) {
@@ -58,7 +60,7 @@ class Client {
 
     // Check if the click was outside the canvas.
     if (mx < 0 || mx > this.map.sizes.canvasx || my < 0 || my > this.map.sizes.canvasy) {
-      console.log('Click was outside the canvas. Not sending');
+      console.log('Click was outside the canvas. Not treating it');
       return;
     }
 
@@ -66,25 +68,17 @@ class Client {
     if (this.mode == 'prepare') {
       this.map.selectBoat(mx, my);
     }
-  }
 
-  /*
-  updateMaps(data) {
-    // Receives the new map information and updates it.
-    console.log('Updating maps');
-
-    // Get the indexes right.
-    let me = this.playerId - 1;
-    let enemy = 0 ? me == 1 : 1;
-
-    // Update the values in the client grid.
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        this.map.grid[i][j][0] = data[i][j][me];
-        this.map.grid[i][j][1] = data[i][j][enemy];
-      }
+    // While in play mode, send the click to the server.
+    if (this.mode == 'play') {
+      let data = {
+        socketId: this.socketId,
+        mx: mx,
+        my: my
+      };
+      socket.emit('click', data);
     }
-  }*/
+  }
 
   pressed(keyCode, key) {
     // Receives a code of the key pressed and treats it.
@@ -95,15 +89,24 @@ class Client {
     }
   }
 
-  sendMap() {
-    // This client has finished preparing its boats, so send the map to master.
+  sendMyMap() {
+    // This client has finished preparing its boats, so send the map to the server.
     let data = {
       playerId: this.playerId,
       socketId: this.socketId,
       grid: this.map.grid
     };
-    socket.emit('sendMap', data);
+    socket.emit('sendMyMap', data);
 
     // TODO: change mode and something else???
+  }
+
+  bombing(data) {
+    // After a bombing, receives the new maps with all information.
+    this.map.bombing(data);
+  }
+
+  finalMaps(data) {
+    // Receives the final maps of both players.
   }
 }
