@@ -29,16 +29,16 @@ io.sockets.on('connection', newClient);
 function newClient(socket) {
   console.log('New client with socket id: ' + socket.id);
   console.log('Sending initial information...');
-  io.emit('initialize', master.map.sizes);
+  send('initialize', master.mastermap.sizes, 'all');
 
   socket.on('ready', ready);
   function ready(data) {
     master.ready(data);
   }
 
-  socket.on('sendMyMap', receive);
-  function receive(data) {
-    master.receive(data);
+  socket.on('sendMap', receiveMap);
+  function receiveMap(data) {
+    master.receiveMap(data);
   }
 
   socket.on('click', click);
@@ -55,17 +55,16 @@ function send(command, data, who) {
   // Log master messages.
   let message;
   switch (command) {
+    case 'initialize':
+      message = 'sending size information to client';
     case 'addPlayer':
-      message = 'adding a new player';
+      message = 'adding player ' + data.playerId;
       break;
     case 'updateMode':
-      message = 'updating mode';
+      message = 'updating mode to ' + master.mode;
       break;
     case 'bombing':
-      message = 'sending a bomb event';
-      break;
-    case 'finalMaps':
-      message = 'sending the final maps for both players';
+      message = 'sending a bombing event. Bombed is player ' + data.bombedId;
       break;
     default:
       message = 'command not understood';

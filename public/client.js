@@ -89,14 +89,14 @@ class Client {
     }
   }
 
-  sendMyMap() {
-    // This client has finished preparing its boats, so send the map to the server.
+  sendMap() {
+    // This player has finished preparing its boats, so send the map to the server.
     let data = {
       playerId: this.playerId,
       socketId: this.socketId,
       grid: this.map.grid
     };
-    socket.emit('sendMyMap', data);
+    socket.emit('sendMap', data);
 
     // TODO: change mode and something else???
   }
@@ -104,9 +104,5 @@ class Client {
   bombing(data) {
     // After a bombing, receives the new maps with all information.
     this.map.bombing(data);
-  }
-
-  finalMaps(data) {
-    // Receives the final maps of both players.
   }
 }

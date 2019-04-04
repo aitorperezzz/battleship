@@ -18,6 +18,7 @@ class ClientMap {
             isBoat: false,
             isBombed: false,
             isSunk: false,
+            boatIndex: -1
           };
           grid[i].push(newCell);
         }
@@ -37,6 +38,7 @@ class ClientMap {
     // Create the boats for this client.
     this.boatSizes = [5, 4, 3, 3, 2];
     this.boats = [];
+    this.boatCount = 0;
 
     for (let i = 0; i < this.boatSizes.length; i++) {
       // Create i + 1 boats of this size.
@@ -191,10 +193,12 @@ class ClientMap {
     // Actually drop the boat where it is.
     for (let i = 0; i < boat.pieces.length; i++) {
       this.grid['own'][boat.pieces[i].row][boat.pieces[i].col].isBoat = true;
+      this.grid['own'][boat.pieces[i].row][boat.pieces[i].col].boatIndex = this.boatCount;
     }
 
-    // Remove the boat from the array.
+    // Remove the boat from the array and reset.
     this.boats.splice(this.boatSelected, 1);
+    this.boatCount++;
     this.boatSelected = -1;
     return true;
   }
@@ -202,8 +206,18 @@ class ClientMap {
   bombing(data) {
     // Receives bombing data and updates.
     // It receives a bomber id.
-    let bombed = data.bomberId == client.playerId ? 'enemy' : 'own';
-    this.grid[bombed][data.row][data.col].isBombed = data.isBombed;
+    let bombed = data.bombedId == client.playerId ? 'own' : 'enemy';
+    this.grid[bombed][data.row][data.col].isBombed = true;
     this.grid[bombed][data.row][data.col].isBoat = data.isBoat;
+
+    if (data.event == 'hit') {
+      console.log('Boat was hit');
+    }
+    else if (data.event == 'water') {
+      console.log('Water');
+    }
+    else if (data.event == 'sunk') {
+      console.log('Boat was sunk');
+    }
   }
 }

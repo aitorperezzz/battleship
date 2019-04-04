@@ -1,9 +1,6 @@
 // This is the MasterMap class.
 // This class stores information about the maps of both players.
 
-// Import the server module to communicate with it.
-let server = require('./server.js');
-
 class MasterMap {
   constructor() {
     let canvasx = 500;
@@ -71,16 +68,6 @@ class MasterMap {
       }
     };
 
-    // Create an object with information about both players.
-    this.info = {
-      'player1': {
-        receivedMap: false
-      },
-      'player2': {
-        receivedMap: false
-      }
-    };
-
     // Create two grids, one for each player.
     this.grid = {};
     for (let k = 1; k <= 2; k++) {
@@ -93,80 +80,25 @@ class MasterMap {
             isBoat: false,
             isBombed: false,
             isSunk: false,
+            boatIndex: -1
           };
           newGrid[i].push(newCell);
         }
       }
       this.grid[player] = newGrid;
     }
-
-    /*
-    // Create a grid to store information about both players.
-    this.grid = [];
-    for (let i = 0; i < 10; i++) {
-      this.grid.push([]);
-      for (let j = 0; j < 10; j++) {
-        // Create a cell object.
-        let newCell = {
-          'player1': {
-            isBoat: false,
-            isBombed: false,
-            isSunk: false,
-          },
-          'player2': {
-            isBoat: false,
-            isBombed: false,
-            isSunk: false,
-          }
-        };
-        this.grid[i].push(newCell);
-      }
-    }*/
   }
-
-  /*
-  clicked(mx, my, mode) {
-    // Receives mouse locations and mode and decides if the grid has been clicked.
-    // If so, it returns the cell clicked.
-    let sizes;
-    if (mode == 'prepare') {
-      sizes = this.sizes.prepare;
-    }
-
-    let outsideX = mx < sizes.initialx || mx > sizes.initialx + sizes.xsize;
-    let outsideY = my < sizes.initialy || my > sizes.initialy + sizes.ysize;
-    if (outsideX || outsideY) {
-      // The click was outside the grid.
-      return undefined;
-    }
-
-    // Only now check the cell's row and column.
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        let clickedX = mx >= sizes.initialx + j * sizes.size && mx < sizes.initialx + (j + 1) * sizes.size;
-        let clickedY = my >= sizes.initialy + i * sizes.size && my < sizes.initialy + (i + 1) * sizes.size;
-        if (clickedX && clickedY) {
-          return [i, j];
-        }
-      }
-    }
-  }*/
 
   receive(data) {
     // Receives the map of a player in the appropriate format and updates.
+    console.log('Updating map from player ' + data.playerId);
     let player = 'player' + data.playerId;
-    console.log(typeof(this.grid));
-    //console.log(util.inspect(this.grid));
-    console.log('player is ' + player);
     for (let i = 0; i < 10; i++) {
       for (let j = 0; j < 10; j++) {
-
         this.grid[player][i][j].isBoat = data.grid['own'][i][j].isBoat;
+        this.grid[player][i][j].boatIndex = data.grid['own'][i][j].boatIndex;
       }
     }
-
-    // Acknowledge that the map has been received.
-    this.info[player].receivedMap = true;
   }
 
   logMap() {
@@ -178,7 +110,7 @@ class MasterMap {
         let output = '';
         for (let j = 0; j < 10; j++) {
           if (this.grid[player][i][j].isBoat) {
-            output = output + '#';
+            output = output + this.grid[player][i][j].boatIndex;
           }
           else {
             output = output + ' ';
@@ -199,15 +131,9 @@ class MasterMap {
     return xClicked && yClicked;
   }
 
-  /*
-  enemyCellClicked(mx, my, i, j) {
-    // Decides if the ij enemy cell has been clicked.
-    let sizes = this.sizes.play['enemy'];
-    let xClicked = mx >= this.sizes
-  }*/
-
   bomb(bomberId, mx, my) {
-    // Receives a mouse location and a player id and bombs.
+    // Receives a mouse location and a bomber id and bombs.
+    // Then returns all the information to master.
     let bombedId = bomberId == 1 ? 2 : 1;
     let bomber = 'player' + bomberId;
     let bombed = 'player' + bombedId;
@@ -218,20 +144,65 @@ class MasterMap {
     let col = Math.floor((mx - sizes.initialx) / sizes.size);
 
     // Process the bombing.
-    // TODO: check for sunk event.
-    this.grid[bombed][row][col].isBombed = true;
+    if (this.grid[bombed][row][col].isBombed) {
+      console.log('Cell is already bombed. Ignoring');
+      return false;
+    }
+    else {
+      // Bomb it.
+      this.grid[bombed][row][col].isBombed = true;
 
-    let toSend = {
-      bomberId: bomberId,
-      row: row,
-      col: col,
-      isBombed: true,
-      isBoat: this.grid[bombed][row][col].isBoat,
-    };
+      let toSend = {
+        bombedId: bombedId,
+        row: row,
+        col: col,
+        isBoat: this.grid[bombed][row][col].isBoat,
+      };
 
-    return toSend;
+      if (!this.grid[bombed][row][col].isBoat) {
+        // Send a water event.
+        console.log('Water event');
+        toSend.event = 'water';
+      }
+      else if (this.checkSink(bombed, row, col)) {
+        // Send a sunk event.
+        console.log('Sunk event');
+        toSend.event = 'sunk';
+      }
+      else {
+        // Send a hit event.
+        console.log('Hit event');
+        toSend.event = 'hit';
+      }
+      return toSend;
+    }
+  }
+
+  checkSink(bombed, row, col) {
+    // Receives bomber id and bombing location and checks if a boat is sunk.
+
+    // Get the index of the relevant boat.
+    let boatIndex = this.grid[bombed][row][col].boatIndex;
+    console.log('Checking boat with index ' + boatIndex);
+
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        let cell = this.grid[bombed][i][j];
+        if (cell.boatIndex === boatIndex) {
+          // Check if it is bombed.
+          if (!cell.isBombed) {
+            // Not all the boat is bombed.
+            return false;
+          }
+        }
+      }
+    }
+
+    // The boat is sunk.
+    return true;
   }
 }
 
-// Export this class for master.
+// INTERFACE.
+// Exports.
 module.exports = MasterMap;

@@ -1,5 +1,0 @@
-class Boat {
-  constructor(size) {
-    
-  }
-}

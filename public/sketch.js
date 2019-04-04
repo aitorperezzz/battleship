@@ -15,7 +15,6 @@ function setup() {
   socket.on('initialize', initialize);
   socket.on('addPlayer', addPlayer);
   socket.on('updateMode', updateMode);
-  socket.on('finalMaps', finalMaps);
   socket.on('bombing', bombing);
 }
 
@@ -43,9 +42,9 @@ function clientReady() {
   socket.emit('ready', data);
 }
 
-function sendMyMap() {
+function sendMap() {
   // This client has finished preparing its boats.
-  client.sendMyMap();
+  client.sendMap();
 }
 
 // FUNCTIONS TO HANDLE EVENTS COMING FROM THE SERVER.

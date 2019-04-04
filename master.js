@@ -1,61 +1,27 @@
 // This is the master class for the game.
-
-// Import the server module to communicate with it.
-let server = require('./server.js');
-
-// Import the child classes.
-let MasterMap = require('./mastermap.js');
-
-// Define the master class.
 class Master {
   constructor() {
     this.mode = 'wait';
     this.players = [];
 
-    // Initialize the map.
-    this.map = new MasterMap();
-
-    // Calculate some sizes for the game.
-    /*
-    let canvasx = 500;
-    let canvasy = 600;
-    let xsize = Math.min(canvasx, canvasy) * 3 / 4;
-    let ysize = xsize;
-    let size = xsize / 10;
-    let initialx = (canvasx - xsize) / 2;
-    let initialy = (canvasy - ysize) / 2;
-    this.sizes = {
-      initialx: initialx,
-      initialy: initialy,
-      xsize: xsize,
-      ysize: ysize,
-      size: size,
-    };
-    */
-
-    // Decide some sizes for the enemy's map.
-    /*
-    let enemyMap = {
-
-    };*/
-
-    // Bundle all this information.
-    /*
-    this.data = {
-      canvasx: canvasx,
-      canvasy: canvasy,
-      sizes: this.sizes
+    // Create an object with information about both players.
+    this.info = {
+      'player1': {
+        receivedMap: false,
+        turn: false,
+      },
+      'player2': {
+        receivedMap: false,
+        turn: false,
+      }
     };
 
-    // Create the maps for the two players.
-    this.map = new Map(this.sizes);
-    //this.maps = [map1, map2];
-    //this.map = new Map(myMap);
-    //this.maps = [map1, map2];
-    */
+    // Initialize a master map.
+    this.mastermap = new MasterMap();
   }
 
   ready(data) {
+    // Receives a ready event from a client and treats it.
     console.log('Client with id: ' + data.socketId + ' wants to play');
 
     // Check if the client is already a player.
@@ -104,6 +70,9 @@ class Master {
         console.log('Master is in prepare mode');
         server.send('updateMode', 'prepare', 'all');
         break;
+      default:
+        console.log('Could not create a new player');
+        break;
     }
   }
 
@@ -118,27 +87,30 @@ class Master {
     return 0;
   }
 
-  receive(data) {
-    // Receives a map from a player after preparing.
+  receiveMap(data) {
+    // Receives a map from a player after preparation time.
+    // TODO: check that the one sending is a player.
     console.log('Updating map from player ' + data.playerId);
-    this.map.receive(data);
+    let player = 'player' + data.playerId;
+    this.mastermap.receive(data);
+    this.info[player].receivedMap = true;
 
     // If both maps have been received, get into play mode.
     if (this.bothReceived()) {
       this.mode = 'play';
+      this.info['player1'].turn = true;
 
       // Update modes and maps to clients.
       server.send('updateMode', this.mode, 'all');
-      server.send('finalMaps', this.map.grid, 'all');
 
       // Log the maps to the server's terminal.
-      this.map.logMap();
+      this.mastermap.logMap();
     }
   }
 
   bothReceived() {
     // Decides if the maps from the two players have been received.
-    return this.map.info["player1"].receivedMap && this.map.info["player2"].receivedMap;
+    return this.info['player1'].receivedMap && this.info['player2'].receivedMap;
   }
 
   click(data) {
@@ -158,34 +130,41 @@ class Master {
       return;
     }
 
-    // TODO: Check that it's this player's turn.
+    // Check that it's this player's turn.
+    let player = 'player' + playerId;
+    if (!this.info[player].turn) {
+      console.log('Not this players turn. Ignoring');
+      return;
+    }
 
     // Check that the click was inside the enemy grid.
-    if (!this.map.clickedEnemyGrid(data.mx, data.my)) {
+    if (!this.mastermap.clickedEnemyGrid(data.mx, data.my)) {
       console.log('Click outside the enemy grid. Ignoring');
       return;
     }
 
-    let toSend = this.map.bomb(playerId, data.mx, data.my);
-    server.send('bombing', toSend, 'all');
+    let toSend = this.mastermap.bomb(playerId, data.mx, data.my);
+    if (toSend) {
+      server.send('bombing', toSend, 'all');
+      this.changeTurns();
+    }
+  }
 
-
-    /*
-    // Check that the click was inside the grid.
-    let clicked = this.map.clicked(data.mx, data.my, this.mode);
-    if (clicked == undefined) {
-      console.log('The click was outside the grid. Ignoring');
-      return;
+  changeTurns() {
+    if (this.info['player1'].turn) {
+      this.info['player1'].turn = false;
+      this.info['player2'].turn = true;
     }
     else {
-      // Update the information in master.
-      this.map.addBoat(clicked[0], clicked[1], playerId);
-
-      // Broadcast this map change.
-      server.send('updateMaps', this.map.grid);
-    }*/
+      this.info['player1'].turn = true;
+      this.info['player2'].turn = false;
+    }
   }
 }
 
-// Export the master class.
+// INTERFACE.
+// Imports.
+let server = require('./server.js');
+let MasterMap = require('./mastermap.js');
+// Exports.
 module.exports = Master;
