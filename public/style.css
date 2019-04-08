@@ -1,0 +1,24 @@
+/* CSS style for the client */
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  display: center;
+  align-items: center;
+  justify-content: center;
+}
+
+#canvasArea {
+  width: vw;
+  align-items: center;
+}
+
+#buttonArea {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -25,7 +25,8 @@ class Client {
 
     // Give the sizes of the maps to the Map object.
     this.map.sizes = data;
-    createCanvas(this.map.sizes.canvasx, this.map.sizes.canvasy);
+    let canvas = createCanvas(this.map.sizes.canvasx, this.map.sizes.canvasy);
+    canvas.parent("canvasArea");
     this.initialized = true;
   }
 

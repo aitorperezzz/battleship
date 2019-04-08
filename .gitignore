@@ -1,0 +1,6 @@
+# Ignore some nodejs specific files and modules.
+node_modules/
+package-lock.json
+
+# Ignore the p5js library
+public/p5.js
