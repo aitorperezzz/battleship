@@ -12,8 +12,9 @@ body {
 }
 
 #canvasArea {
-  width: vw;
+  display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 #buttonArea {

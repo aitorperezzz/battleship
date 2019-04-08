@@ -27,9 +27,9 @@ console.log('Master has been created');
 io.sockets.on('connection', newClient);
 
 function newClient(socket) {
+  // On new connection, send some initial information to the client.
   console.log('New client with socket id: ' + socket.id);
-  console.log('Sending initial information...');
-  send('initialize', master.mastermap.sizes, 'all');
+  master.initializeClient(socket.id);
 
   socket.on('ready', ready);
   function ready(data) {
@@ -70,8 +70,13 @@ function send(command, data, who) {
       message = 'command not understood';
       break;
   }
-  console.log('Master: ' + message);
-  io.emit(command, data);
+  console.log('Master: ' + message + '; Destination: ' + who);
+  if (who == 'all') {
+    io.emit(command, data);
+  }
+  else {
+    io.to(who).emit(command, data);
+  }
 }
-// Export this function.
+// Export this function as the interface of server.
 module.exports.send = send;

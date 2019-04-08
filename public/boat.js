@@ -1,6 +1,6 @@
-class Boat {
-  // This class is for the boats while in prepare mode.
+// Class for the boats while in prepare mode.
 
+class Boat {
   constructor(size) {
     // Receives a size and builds a boat at the beginning of the grid.
     this.pieces = [];

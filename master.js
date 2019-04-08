@@ -20,6 +20,11 @@ class Master {
     this.mastermap = new MasterMap();
   }
 
+  initializeClient(socketId) {
+    server.send('initialize', this.mastermap.bundle, socketId);
+    server.send('updateMode', 'wait', socketId);
+  }
+
   ready(data) {
     // Receives a ready event from a client and treats it.
     console.log('Client with id: ' + data.socketId + ' wants to play');

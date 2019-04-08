@@ -1,4 +1,5 @@
 // Client code for battleship.
+//let canvas;
 let socket;
 let client;
 
@@ -31,20 +32,6 @@ function mousePressed() {
 function keyPressed() {
   // The user pressed some key.
   client.pressed(keyCode, key);
-}
-
-// FUNCTIONS FOR THE BUTTONS ON TOP.
-function clientReady() {
-  // This client pressed the ready button.
-  let data = {
-    socketId: client.socketId,
-  };
-  socket.emit('ready', data);
-}
-
-function sendMap() {
-  // This client has finished preparing its boats.
-  client.sendMap();
 }
 
 // FUNCTIONS TO HANDLE EVENTS COMING FROM THE SERVER.

@@ -3,42 +3,84 @@
 
 class MasterMap {
   constructor() {
+    // General values.
     let canvasx = 500;
     let canvasy = 600;
+    let xnum = 12;
+    let ynum = 12;
 
-    // Calculate sizes for the grid placement in prepare mode.
-    let xsize = Math.min(canvasx, canvasy) * 3 / 4;
-    let ysize = xsize;
-    let size = xsize / 10;
+    // Calculate sizes for the map placement in prepare mode.
+    let sep = canvasy / 6;
+    let xsize;
+    let ysize;
+    let size;
+    if (canvasx / xnum < (canvasy - sep) / ynum) {
+      // The x size dominates.
+      xsize = canvasx * 3 / 4;
+      size = xsize / xnum;
+      ysize = size * ynum;
+    }
+    else {
+      // The y size dominates.
+      ysize = (canvasy - sep) * 3 / 4;
+      size = ysize / ynum;
+      xsize = size * xnum;
+    }
     let initialx = (canvasx - xsize) / 2;
-    let initialy = (canvasy - ysize) / 2;
-
-    // Calculate sizes to place the array of boats in
-    // prepare mode.
-    let xsizeBoat = canvasx * 5 / 6;
-    let sizeBoat = xsizeBoat / 15;
-    let ysizeBoat = sizeBoat;
-    let initialxBoat = (canvasx - xsizeBoat) / 2;
-    let initialyBoat = (initialy - sizeBoat) / 2;
+    let initialy = sep + (canvasy - sep - ysize) / 2;
 
     // Calculate sizes for the own map in play mode.
     let xsizeOwn = Math.min(canvasx, canvasy / 3) * 4 / 5;
-    let ysizeOwn = xsizeOwn;
-    let sizeOwn = xsizeOwn / 10;
+    let sizeOwn = xsizeOwn / xnum;
+    let ysizeOwn = sizeOwn * ynum;
     let initialxOwn = (canvasx - xsizeOwn) / 2;
     let initialyOwn = (canvasy / 3 - ysizeOwn) / 2;
 
     // Calculate sizes for the enemy map in play mode.
     let xsizeEnemy = Math.min(canvasx, canvasy * 2 / 3) * 4 / 5;
-    let ysizeEnemy = xsizeEnemy;
-    let sizeEnemy = xsizeEnemy / 10;
+    let sizeEnemy = xsizeEnemy / xnum;
+    let ysizeEnemy = sizeEnemy * ynum;
     let initialxEnemy = (canvasx - xsizeEnemy) / 2;
     let initialyEnemy = canvasy / 3 + (canvasy * 2 / 3 - ysizeEnemy) / 2;
+
+    // Calculate the number of boats of each size.
+    let boats = [
+      [5, 1],
+      [4, 1],
+      [3, 3],
+      [2, 3]
+    ];
+    let numBoats = 0;
+    for (let i = 0; i < boats.length; i++) {
+      numBoats = numBoats + boats[i][1];
+    }
+
+    // Calculate sizes to place the array of boats in
+    // prepare mode.
+    let xsizeBoat;
+    let ysizeBoat;
+    let sizeBoat;
+    if (canvasx / numBoats < sep) {
+      // The x size limits.
+      xsizeBoat = canvasx * 3 / 4;
+      sizeBoat = xsizeBoat / numBoats;
+      ysizeBoat = sizeBoat;
+    }
+    else {
+      // The y size limits.
+      ysizeBoat = sep * 3 / 4 ;
+      sizeBoat = ysizeBoat;
+      xsizeBoat = sizeBoat * numBoats;
+    }
+    let initialxBoat = (canvasx - xsizeBoat) / 2;
+    let initialyBoat = (sep - ysizeBoat) / 2;
 
     this.sizes = {
       canvasx: canvasx,
       canvasy: canvasy,
-      prepare: {
+      xnum: xnum,
+      ynum: ynum,
+      'prepare': {
         initialx: initialx,
         initialy: initialy,
         xsize: xsize,
@@ -50,7 +92,7 @@ class MasterMap {
         initialxBoat: initialxBoat,
         initialyBoat: initialyBoat,
       },
-      play: {
+      'play': {
         'own': {
           xsize: xsizeOwn,
           ysize: ysizeOwn,
@@ -68,14 +110,25 @@ class MasterMap {
       }
     };
 
+    this.boatInfo = {
+      boatSizeNumber: boats,
+      numBoats: numBoats,
+    };
+
+    // Bundle all this information to send later.
+    this.bundle = {
+      sizes: this.sizes,
+      boatInfo: this.boatInfo,
+    };
+
     // Create two grids, one for each player.
     this.grid = {};
     for (let k = 1; k <= 2; k++) {
       let player = 'player' + k;
       let newGrid = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < this.sizes.ynum; i++) {
         newGrid.push([]);
-        for (let j = 0; j < 10; j++) {
+        for (let j = 0; j < this.sizes.xnum; j++) {
           let newCell = {
             isBoat: false,
             isBombed: false,
@@ -93,8 +146,8 @@ class MasterMap {
     // Receives the map of a player in the appropriate format and updates.
     console.log('Updating map from player ' + data.playerId);
     let player = 'player' + data.playerId;
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
+    for (let i = 0; i < this.sizes.ynum; i++) {
+      for (let j = 0; j < this.sizes.xnum; j++) {
         this.grid[player][i][j].isBoat = data.grid['own'][i][j].isBoat;
         this.grid[player][i][j].boatIndex = data.grid['own'][i][j].boatIndex;
       }
@@ -106,9 +159,9 @@ class MasterMap {
     for (let k = 1; k <= 2; k++) {
       let player = 'player' + k;
       console.log('Map for player ' + k);
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < this.sizes.ynum; i++) {
         let output = '';
-        for (let j = 0; j < 10; j++) {
+        for (let j = 0; j < this.sizes.xnum; j++) {
           if (this.grid[player][i][j].isBoat) {
             output = output + this.grid[player][i][j].boatIndex;
           }
@@ -185,8 +238,8 @@ class MasterMap {
     let boatIndex = this.grid[bombed][row][col].boatIndex;
     console.log('Checking boat with index ' + boatIndex);
 
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
+    for (let i = 0; i < this.sizes.ynum; i++) {
+      for (let j = 0; j < this.sizes.xnum; j++) {
         let cell = this.grid[bombed][i][j];
         if (cell.boatIndex === boatIndex) {
           // Check if it is bombed.

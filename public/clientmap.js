@@ -6,14 +6,26 @@ class ClientMap {
     // Information about sizes.
     this.sizes;
 
-    // Create two grids to store the relevant information.
-    // For the enemy, isBoat does not contain all the information.
+    // Information about the maps.
     this.grid = {};
+
+    // Boats to be placed by the player.
+    this.boatInfo = {};
+    this.boats = [];
+    this.boatSelected = -1;
+  }
+
+  atInitialize(bundle) {
+    // During initialization, this function initializes values for the map.
+    this.sizes = bundle.sizes;
+    this.boatInfo = bundle.boatInfo;
+
+    // Initialize the grid.
     for (let k = 0; k < 2; k++) {
       let grid = [];
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < this.sizes.ynum; i++) {
         grid.push([]);
-        for (let j = 0; j < 10; j++) {
+        for (let j = 0; j < this.sizes.xnum; j++) {
           let newCell = {
             isBoat: false,
             isBombed: false,
@@ -34,20 +46,13 @@ class ClientMap {
       }
     }
 
-    // TODO: review this code.
-    // Create the boats for this client.
-    this.boatSizes = [5, 4, 3, 3, 2];
-    this.boats = [];
-    this.boatCount = 0;
-
-    for (let i = 0; i < this.boatSizes.length; i++) {
-      // Create i + 1 boats of this size.
-      for (let k = 0; k < i + 1; k++) {
-        let newBoat = new Boat(this.boatSizes[i]);
+    // Create the boats.
+    for (let i = 0; i < this.boatInfo.boatSizeNumber.length; i++) {
+      for (let k = 0; k < this.boatInfo.boatSizeNumber[i][1]; k++) {
+        let newBoat = new Boat(this.boatInfo.boatSizeNumber[i][0]);
         this.boats.push(newBoat);
       }
     }
-    this.boatSelected = -1;
   }
 
   display(mode) {
@@ -71,6 +76,8 @@ class ClientMap {
           fill(255);
         }
         noStroke();
+        //console.log(sizes);
+        //noLoop();
         rect(sizes.initialxBoat + k * sizes.sizeBoat, sizes.initialyBoat, sizes.sizeBoat, sizes.sizeBoat);
         fill(0);
         textAlign(CENTER, CENTER);
@@ -92,8 +99,8 @@ class ClientMap {
 
   displayGrid(sizes, which) {
     // Receives a sizes object and displays the selected grid.
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
+    for (let i = 0; i < this.sizes.ynum; i++) {
+      for (let j = 0; j < this.sizes.xnum; j++) {
         // Only draw the boats in my own grid.
         if (which == 'own' && this.grid[which][i][j].isBoat) {
           // Paint it grey.
@@ -146,7 +153,7 @@ class ClientMap {
   availableToMove(row, col) {
     // Decides if the spot is available to live.
     // Only check if the index is out of bounds.
-    if (row < 0 || row > 9 || col < 0 || col > 9) {
+    if (row < 0 || row > this.sizes.ynum - 1 || col < 0 || col > this.sizes.xnum - 1) {
       return false;
     }
     return true;
@@ -166,7 +173,7 @@ class ClientMap {
   }
 
   manipulateBoat(keyCode, key) {
-    // Manipulate the boat
+    // Manipulate the boat.
     if (this.boatSelected == -1) {
       // No boat is selected, so return.
       return;

@@ -19,15 +19,55 @@ class Client {
     console.log('Client connected with socket id: ' + client.socketId);
   }
 
-  initialize(data) {
-    // Master has sent some basic information at connection.
-    console.log('Initializing the sizes of the canvas');
+  initialize(bundle) {
+    // Master has sent some basic information on first connection.
+    console.log('Initial data coming from the server');
 
     // Give the sizes of the maps to the Map object.
-    this.map.sizes = data;
-    let canvas = createCanvas(this.map.sizes.canvasx, this.map.sizes.canvasy);
-    canvas.parent("canvasArea");
+    this.map.atInitialize(bundle);
+    createCanvas(this.map.sizes.canvasx, this.map.sizes.canvasy);
+    this.placeCanvas();
     this.initialized = true;
+  }
+
+  placeCanvas() {
+    // Called when the canvas is first created. Position it inside parent element.
+    let canvas = document.getElementsByTagName('canvas')[0];
+    document.getElementById('canvasArea').appendChild(canvas);
+  }
+
+  clientReady() {
+    // The user has pressed the ready button.
+    let data = {
+      socketId: this.socketId,
+    };
+    socket.emit('ready', data);
+  }
+
+  modifyButtonArea() {
+    // Modifies the button area according to the mode.
+    let area = document.getElementById('buttonArea');
+    let newButton;
+
+    switch (this.mode) {
+      case 'wait':
+        // Add the ready button.
+        newButton = document.createElement('button');
+        newButton.setAttribute('onclick', 'client.clientReady()');
+        newButton.innerHTML = 'Ready!';
+        area.appendChild(newButton);
+        break;
+      case 'prepare':
+        // Remove all previous buttons and add the finished preparing button.
+        while (area.firstChild) {
+          area.removeChild(area.firstChild);
+        }
+        newButton = document.createElement('button');
+        newButton.setAttribute('onclick', 'client.sendMap()');
+        newButton.innerHTML = 'Finished. Send my map!';
+        area.appendChild(newButton);
+        break;
+    }
   }
 
   display() {
@@ -54,6 +94,7 @@ class Client {
     // Receives a new mode and updates it.
     console.log('Changing to ' + data + ' mode');
     this.mode = data;
+    this.modifyButtonArea();
   }
 
   clicked(mx, my) {
