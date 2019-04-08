@@ -40,7 +40,6 @@ class Boat {
 
   manipulate(keyCode, key) {
     // Manipulate this boat with the key code provided.
-    console.log(key);
     let changed;
     switch (keyCode) {
       case LEFT_ARROW:

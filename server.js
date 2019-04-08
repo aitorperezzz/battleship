@@ -45,6 +45,11 @@ function newClient(socket) {
   function click(data) {
     master.click(data);
   }
+
+  socket.on('leftRoom', leftRoom);
+  function leftRoom(data) {
+    master.leftRoom(data);
+  }
 }
 
 
@@ -57,6 +62,7 @@ function send(command, data, who) {
   switch (command) {
     case 'initialize':
       message = 'sending size information to client';
+      break;
     case 'addPlayer':
       message = 'adding player ' + data.playerId;
       break;
@@ -66,11 +72,17 @@ function send(command, data, who) {
     case 'bombing':
       message = 'sending a bombing event. Bombed is player ' + data.bombedId;
       break;
+    case 'resetGame':
+      message = 'resetting the game';
+      break;
+    case 'win':
+      message = 'player ' + data + ' has won!!!';
+      break;
     default:
       message = 'command not understood';
       break;
   }
-  console.log('Master: ' + message + '; Destination: ' + who);
+  console.log('--> Master: ' + message + '; Destination: ' + who);
   if (who == 'all') {
     io.emit(command, data);
   }

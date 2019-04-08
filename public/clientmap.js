@@ -11,14 +11,13 @@ class ClientMap {
 
     // Boats to be placed by the player.
     this.boatInfo = {};
-    this.boats = [];
+    this.boats;
     this.boatSelected = -1;
+    this.boatCount = 0;
   }
 
-  atInitialize(bundle) {
-    // During initialization, this function initializes values for the map.
-    this.sizes = bundle.sizes;
-    this.boatInfo = bundle.boatInfo;
+  initialize() {
+    // This function sets the grid and the boats to the default.
 
     // Initialize the grid.
     for (let k = 0; k < 2; k++) {
@@ -47,19 +46,32 @@ class ClientMap {
     }
 
     // Create the boats.
+    this.createBoats();
+  }
+
+  createBoats() {
+    // Creates the array of boats.
+    this.boats = [];
     for (let i = 0; i < this.boatInfo.boatSizeNumber.length; i++) {
       for (let k = 0; k < this.boatInfo.boatSizeNumber[i][1]; k++) {
         let newBoat = new Boat(this.boatInfo.boatSizeNumber[i][0]);
         this.boats.push(newBoat);
       }
     }
+
   }
 
   display(mode) {
     // Display different things depending on the mode.
 
     // Get the right sizes.
-    let sizes = this.sizes[mode];
+    let sizes;
+    if (mode == 'prepare') {
+      sizes = this.sizes[mode];
+    }
+    else if (mode == 'play' || mode == 'win') {
+      sizes = this.sizes['play'];
+    }
 
     if (mode == 'prepare') {
       // Draw my own grid.
@@ -90,7 +102,7 @@ class ClientMap {
         this.boats[this.boatSelected].display(sizes);
       }
     }
-    else if (mode == 'play') {
+    else if (mode == 'play' || mode == 'win') {
       // Display both grids.
       this.displayGrid(sizes['own'], 'own');
       this.displayGrid(sizes['enemy'], 'enemy');
@@ -113,20 +125,18 @@ class ClientMap {
         stroke(1);
         rect(sizes.initialx + j * sizes.size, sizes.initialy + i * sizes.size, sizes.size, sizes.size);
 
-        // Draw the bombing information if required.
+        // Draw the bombing information for both grids.
         if (this.grid[which][i][j].isBombed) {
           if (this.grid[which][i][j].isBoat) {
-            // Draw a red ellipse when the bombing is over a boat.
+            // Red dot when over a boat.
             fill(255, 0, 0);
-            noStroke();
-            ellipse(sizes.initialx + (j + 1/2) * sizes.size, sizes.initialy + (i + 1/2) * sizes.size, sizes.size / 3, sizes.size / 3);
           }
-          else if (which == 'enemy') {
-            // Only draw water for the enemy grid.
+          else {
+            // White dot when over water.
             fill(255);
-            noStroke();
-            ellipse(sizes.initialx + (j + 1/2) * sizes.size, sizes.initialy + (i + 1/2) * sizes.size, sizes.size / 3, sizes.size / 3);
           }
+          noStroke();
+          ellipse(sizes.initialx + (j + 1/2) * sizes.size, sizes.initialy + (i + 1/2) * sizes.size, sizes.size / 3, sizes.size / 3);
         }
       }
     }
@@ -135,7 +145,7 @@ class ClientMap {
   selectBoat(mx, my) {
     // Only in prepare mode.
     // Receives a mouse location and decides if a boat has been selected.
-    let sizes = this.sizes.prepare;
+    let sizes = this.sizes['prepare'];
     for (let k = 0; k < this.boats.length; k++) {
       let xClicked = mx >= sizes.initialxBoat + k * sizes.sizeBoat && mx < sizes.initialxBoat + (k + 1) * sizes.sizeBoat;
       let yClicked = my >= sizes.initialyBoat && my < sizes.initialyBoat + sizes.sizeBoat;
@@ -226,5 +236,25 @@ class ClientMap {
     else if (data.event == 'sunk') {
       console.log('Boat was sunk');
     }
+  }
+
+  reset() {
+    // After leaving the room, the game information has to be resetted.
+    let players = ['own', 'enemy'];
+    for (let k = 0; k < players.length; k++) {
+      for (let i = 0; i < this.sizes.ynum; i++) {
+        for (let j = 0; j < this.sizes.xnum; j++) {
+          this.grid[players[k]][i][j] = {
+            isBoat: false,
+            isBombed: false,
+            isSunk: false,
+            boatIndex: -1
+          };
+        }
+      }
+    }
+    this.createBoats();
+    this.boatCount = 0;
+    this.boatSelected = -1;
   }
 }

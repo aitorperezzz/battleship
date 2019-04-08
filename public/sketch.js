@@ -17,6 +17,8 @@ function setup() {
   socket.on('addPlayer', addPlayer);
   socket.on('updateMode', updateMode);
   socket.on('bombing', bombing);
+  socket.on('resetGame', resetGame);
+  socket.on('win', win);
 }
 
 function draw() {
@@ -61,4 +63,12 @@ function finalMaps(data) {
 
 function bombing(data) {
   client.bombing(data);
+}
+
+function resetGame(data) {
+  client.resetGame(data);
+}
+
+function win(data) {
+  client.win(data);
 }

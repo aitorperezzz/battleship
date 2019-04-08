@@ -95,7 +95,7 @@ class Master {
   receiveMap(data) {
     // Receives a map from a player after preparation time.
     // TODO: check that the one sending is a player.
-    console.log('Updating map from player ' + data.playerId);
+    console.log('Receiving map from player ' + data.playerId);
     let player = 'player' + data.playerId;
     this.mastermap.receive(data);
     this.info[player].receivedMap = true;
@@ -120,7 +120,8 @@ class Master {
 
   click(data) {
     // Receives a click inside the canvas from a client and treats it.
-    console.log('Receiving a click from client ' + data.socketId);
+    console.log('Receiving a click from client');
+    console.log(data);
 
     // Check that we are in play mode.
     if (this.mode != 'play') {
@@ -148,9 +149,13 @@ class Master {
       return;
     }
 
-    let toSend = this.mastermap.bomb(playerId, data.mx, data.my);
-    if (toSend) {
-      server.send('bombing', toSend, 'all');
+    let result = this.mastermap.bomb(playerId, data.mx, data.my);
+    if (result) {
+      server.send('bombing', result, 'all');
+      if (result.win) {
+        server.send('win', result.bomberId, 'all');
+        this.mode = 'win';
+      }
       this.changeTurns();
     }
   }
@@ -164,6 +169,30 @@ class Master {
       this.info['player1'].turn = true;
       this.info['player2'].turn = false;
     }
+  }
+
+  leftRoom(socketId) {
+    // A client with the received socket id has left the room.
+    this.mode = 'wait';
+    this.players = [];
+
+    // Reset info.
+    this.info = {
+      'player1': {
+        receivedMap: false,
+        turn: false,
+      },
+      'player2': {
+        receivedMap: false,
+        turn: false,
+      }
+    };
+
+    // Reset the map.
+    this.mastermap.reset();
+
+    // Broadcast a reset game event.
+    server.send('resetGame', 0, 'all');
   }
 }
 

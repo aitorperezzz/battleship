@@ -4,7 +4,7 @@ class Client {
   constructor() {
     this.mode = 'wait';
     this.socketId;
-    this.playerId;
+    this.playerId = 0;
     this.players = [];
     this.initialized = false;
 
@@ -20,11 +20,13 @@ class Client {
   }
 
   initialize(bundle) {
-    // Master has sent some basic information on first connection.
+    // The server has sent some basic information on first connection.
     console.log('Initial data coming from the server');
 
     // Give the sizes of the maps to the Map object.
-    this.map.atInitialize(bundle);
+    this.map.sizes = bundle.sizes;
+    this.map.boatInfo = bundle.boatInfo;
+    this.map.initialize();
     createCanvas(this.map.sizes.canvasx, this.map.sizes.canvasy);
     this.placeCanvas();
     this.initialized = true;
@@ -52,6 +54,9 @@ class Client {
     switch (this.mode) {
       case 'wait':
         // Add the ready button.
+        while (area.firstChild) {
+          area.removeChild(area.firstChild);
+        }
         newButton = document.createElement('button');
         newButton.setAttribute('onclick', 'client.clientReady()');
         newButton.innerHTML = 'Ready!';
@@ -66,13 +71,26 @@ class Client {
         newButton.setAttribute('onclick', 'client.sendMap()');
         newButton.innerHTML = 'Finished. Send my map!';
         area.appendChild(newButton);
+        newButton = document.createElement('button');
+        newButton.setAttribute('onclick', 'client.leaveRoom()');
+        newButton.innerHTML = 'Leave room';
+        area.appendChild(newButton);
         break;
+      case 'play':
+      while (area.firstChild) {
+        area.removeChild(area.firstChild);
+      }
+      newButton = document.createElement('button');
+      newButton.setAttribute('onclick', 'client.leaveRoom()');
+      newButton.innerHTML = 'Leave room';
+      area.appendChild(newButton);
+      break;
     }
   }
 
   display() {
     background(0);
-    if (this.initialized) {
+    if (this.initialized && this.mode != 'wait') {
       this.map.display(this.mode);
     }
   }
@@ -118,6 +136,8 @@ class Client {
         mx: mx,
         my: my
       };
+      console.log('Sending click to the server');
+      console.log(data);
       socket.emit('click', data);
     }
   }
@@ -133,18 +153,39 @@ class Client {
 
   sendMap() {
     // This player has finished preparing its boats, so send the map to the server.
+    console.log('Sending the map to the server');
     let data = {
       playerId: this.playerId,
       socketId: this.socketId,
       grid: this.map.grid
     };
     socket.emit('sendMap', data);
-
-    // TODO: change mode and something else???
   }
 
   bombing(data) {
     // After a bombing, receives the new maps with all information.
     this.map.bombing(data);
+  }
+
+  leaveRoom() {
+    // This player has decided to leave the room.
+    console.log('Leaving the room');
+    socket.emit('leftRoom', this.socketId);
+  }
+
+  resetGame() {
+    // Someone has decided to leave the room, so reset everything.
+    console.log('Resetting the game');
+    this.mode = 'wait';
+    this.playerId = 0;
+    this.players = [];
+    this.map.reset();
+    this.modifyButtonArea();
+  }
+
+  win(data) {
+    // A player has won.
+    console.log('Player ' + data + ' has won!');
+    this.mode = 'win';
   }
 }
